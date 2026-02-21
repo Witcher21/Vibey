@@ -11,11 +11,12 @@ import authRoutes from './src/routes/auth.js';
 const app = express();
 
 /* ─── Global middleware ───────────────────────────── */
+app.set('trust proxy', 1); // Trust Render's reverse proxy for correct IP limits
 app.use(helmet());
 app.use(morgan('short'));
 app.use(
   cors({
-    origin: [config.cors.frontendUrl, 'http://localhost:9000', 'http://localhost:3000'],
+    origin: (origin, callback) => callback(null, true), // Allow everything to easily support Vercel dynamic URLs
     credentials: true,
   }),
 );
