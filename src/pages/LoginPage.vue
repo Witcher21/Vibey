@@ -537,39 +537,22 @@ async function oauthLogin(provider) {
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.4);
-  font-size: 13px;
+  font-size: 12px;
   z-index: 2;
   letter-spacing: 0.5px;
-  transition: all 0.3s;
-  padding: 8px 16px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: color 0.3s;
 
   strong {
-    color: rgba(255, 255, 255, 0.85);
-    font-weight: 600;
-    margin-left: 5px;
-    background: linear-gradient(90deg, #fff, #a78bfa, #fff);
-    background-size: 200% auto;
-    color: transparent;
-    -webkit-background-clip: text;
-    background-clip: text;
-    animation: shine 3s linear infinite;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    margin-left: 4px;
   }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(124, 58, 237, 0.3);
-    box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
-    transform: translateY(-2px);
-  }
-}
-
-@keyframes shine {
-  to {
-    background-position: 200% center;
+    color: rgba(255, 255, 255, 0.8);
+    strong {
+      color: #fff;
+    }
   }
 }
 </style>
