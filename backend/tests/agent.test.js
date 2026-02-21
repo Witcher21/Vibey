@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 /*
  * Mock all external services so tests run without API keys or network.
@@ -37,20 +37,7 @@ vi.mock('../src/services/webSearch.js', () => ({
   ]),
 }));
 
-// ─── Mock: Music Search ────────────────────────────
-vi.mock('../src/services/musicSearch.js', () => ({
-  searchMusic: vi.fn().mockResolvedValue([
-    {
-      title: 'Bohemian Rhapsody',
-      artist: 'Queen',
-      album: 'A Night at the Opera',
-      duration: '5:55',
-      videoId: 'abc123',
-      thumbnail: 'https://i.ytimg.com/vi/abc123/mqdefault.jpg',
-      url: 'https://music.youtube.com/watch?v=abc123',
-    },
-  ]),
-}));
+
 
 // ─── Mock: File Processor ──────────────────────────
 vi.mock('../src/services/fileProcessor.js', () => ({
@@ -113,17 +100,7 @@ describe('Web Search Service', () => {
   });
 });
 
-describe('Music Search Service', () => {
-  it('returns track objects with required fields', async () => {
-    const { searchMusic } = await import('../src/services/musicSearch.js');
-    const tracks = await searchMusic('bohemian rhapsody');
-    expect(tracks).toBeInstanceOf(Array);
-    expect(tracks[0]).toHaveProperty('title');
-    expect(tracks[0]).toHaveProperty('artist');
-    expect(tracks[0]).toHaveProperty('videoId');
-    expect(tracks[0]).toHaveProperty('url');
-  });
-});
+
 
 describe('File Processor', () => {
   it('extracts text from PDF buffer', async () => {
@@ -167,19 +144,16 @@ describe('LLM Streaming', () => {
 });
 
 describe('Auth Middleware', () => {
-  it('rejects requests without Authorization header', async () => {
-    const { requireAuth } = await import('../src/middleware/auth.js');
+  it('assigns guest user when no Authorization header is present', async () => {
+    const { optionalAuth } = await import('../src/middleware/auth.js');
 
     const req = { headers: {} };
-    const res = {
-      status: vi.fn().mockReturnThis(),
-      json: vi.fn(),
-    };
+    const res = {};
     const next = vi.fn();
 
-    await requireAuth(req, res, next);
+    await optionalAuth(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(next).not.toHaveBeenCalled();
+    expect(req.user).toHaveProperty('id', 'guest');
+    expect(next).toHaveBeenCalled();
   });
 });
