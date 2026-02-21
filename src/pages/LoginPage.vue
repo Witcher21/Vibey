@@ -19,16 +19,10 @@
 
       <!-- Tab toggle -->
       <div class="auth-toggle">
-        <button
-          :class="['toggle-btn', { active: mode === 'login' }]"
-          @click="mode = 'login'"
-        >
+        <button :class="['toggle-btn', { active: mode === 'login' }]" @click="mode = 'login'">
           Sign In
         </button>
-        <button
-          :class="['toggle-btn', { active: mode === 'signup' }]"
-          @click="mode = 'signup'"
-        >
+        <button :class="['toggle-btn', { active: mode === 'signup' }]" @click="mode = 'signup'">
           Sign Up
         </button>
         <div class="toggle-slider" :class="mode"></div>
@@ -109,16 +103,31 @@
       <div class="oauth-row">
         <button class="oauth-btn" @click="oauthLogin('google')" title="Google">
           <svg viewBox="0 0 24 24" width="20" height="20">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
           </svg>
           <span>Google</span>
         </button>
         <button class="oauth-btn" @click="oauthLogin('github')" title="GitHub">
           <svg viewBox="0 0 24 24" width="20" height="20">
-            <path fill="currentColor" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
+            <path
+              fill="currentColor"
+              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"
+            />
           </svg>
           <span>GitHub</span>
         </button>
@@ -134,27 +143,27 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';
-import { useAuthStore } from 'src/stores/auth-store';
-import { supabase } from 'src/boot/supabase';
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { useAuthStore } from 'src/stores/auth-store'
+import { supabase } from 'src/boot/supabase'
 
-const router = useRouter();
-const $q = useQuasar();
-const auth = useAuthStore();
+const router = useRouter()
+const $q = useQuasar()
+const auth = useAuthStore()
 
-const mode = ref('login');
-const showPassword = ref(false);
-const loading = ref(false);
-const error = ref('');
-const successMessage = ref('');
+const mode = ref('login')
+const showPassword = ref(false)
+const loading = ref(false)
+const error = ref('')
+const successMessage = ref('')
 
 const form = reactive({
   name: '',
   email: '',
   password: '',
-});
+})
 
 function showConfigWarning() {
   $q.notify({
@@ -166,45 +175,45 @@ function showConfigWarning() {
       'Create a .env file in the project root with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY from your Supabase dashboard.',
     icon: 'warning',
     actions: [{ label: 'Got it', color: 'yellow' }],
-  });
+  })
 }
 
 async function handleSubmit() {
   if (!supabase) {
-    showConfigWarning();
-    return;
+    showConfigWarning()
+    return
   }
 
-  loading.value = true;
-  error.value = '';
-  successMessage.value = '';
+  loading.value = true
+  error.value = ''
+  successMessage.value = ''
 
   try {
     if (mode.value === 'signup') {
-      await auth.signUp(form.email, form.password, form.name);
-      successMessage.value = 'Account created! Check your email to confirm.';
+      await auth.signUp(form.email, form.password, form.name)
+      successMessage.value = 'Account created! Check your email to confirm.'
     } else {
-      await auth.signIn(form.email, form.password);
-      const redirect = router.currentRoute.value.query.redirect || '/chat';
-      router.push(redirect);
+      await auth.signIn(form.email, form.password)
+      const redirect = router.currentRoute.value.query.redirect || '/chat'
+      router.push(redirect)
     }
   } catch (err) {
-    error.value = err.message || 'Authentication failed.';
+    error.value = err.message || 'Authentication failed.'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
 async function oauthLogin(provider) {
   if (!supabase) {
-    showConfigWarning();
-    return;
+    showConfigWarning()
+    return
   }
 
   try {
-    await auth.signInWithOAuth(provider);
+    await auth.signInWithOAuth(provider)
   } catch (err) {
-    error.value = err.message;
+    error.value = err.message
   }
 }
 </script>
@@ -236,27 +245,40 @@ async function oauthLogin(provider) {
   animation: float 20s ease-in-out infinite;
 }
 .orb-1 {
-  width: 400px; height: 400px;
+  width: 400px;
+  height: 400px;
   background: #7c3aed;
-  top: -10%; left: -5%;
+  top: -10%;
+  left: -5%;
   animation-delay: 0s;
 }
 .orb-2 {
-  width: 350px; height: 350px;
+  width: 350px;
+  height: 350px;
   background: #06b6d4;
-  bottom: -10%; right: -5%;
+  bottom: -10%;
+  right: -5%;
   animation-delay: -7s;
 }
 .orb-3 {
-  width: 250px; height: 250px;
+  width: 250px;
+  height: 250px;
   background: #f472b6;
-  top: 50%; left: 60%;
+  top: 50%;
+  left: 60%;
   animation-delay: -14s;
 }
 @keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(40px, -30px) scale(1.05); }
-  66% { transform: translate(-20px, 20px) scale(0.95); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(40px, -30px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
 }
 
 /* ─── Card ─── */
@@ -279,7 +301,8 @@ async function oauthLogin(provider) {
   margin-bottom: 28px;
 }
 .logo-icon {
-  width: 64px; height: 64px;
+  width: 64px;
+  height: 64px;
   margin: 0 auto 12px;
   border-radius: 18px;
   background: linear-gradient(135deg, #7c3aed, #06b6d4);
@@ -324,7 +347,9 @@ async function oauthLogin(provider) {
   position: relative;
   z-index: 1;
   transition: color 0.3s ease;
-  &.active { color: #fff; }
+  &.active {
+    color: #fff;
+  }
 }
 .toggle-slider {
   position: absolute;
@@ -334,12 +359,20 @@ async function oauthLogin(provider) {
   background: rgba(124, 58, 237, 0.35);
   border-radius: 10px;
   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  &.login { left: 4px; }
-  &.signup { left: calc(50%); }
+  &.login {
+    left: 4px;
+  }
+  &.signup {
+    left: calc(50%);
+  }
 }
 
 /* ─── Form ─── */
-.auth-form { display: flex; flex-direction: column; gap: 14px; }
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 .input-group {
   position: relative;
   display: flex;
@@ -348,18 +381,25 @@ async function oauthLogin(provider) {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 0 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   &:focus-within {
     border-color: rgba(124, 58, 237, 0.5);
     box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
   }
 }
-.input-icon { color: rgba(255, 255, 255, 0.35); font-size: 20px; }
+.input-icon {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 20px;
+}
 .input-icon-right {
   color: rgba(255, 255, 255, 0.35);
   cursor: pointer;
   font-size: 20px;
-  &:hover { color: rgba(255, 255, 255, 0.6); }
+  &:hover {
+    color: rgba(255, 255, 255, 0.6);
+  }
 }
 .input-group input {
   flex: 1;
@@ -370,7 +410,9 @@ async function oauthLogin(provider) {
   padding: 14px 12px;
   font-size: 15px;
   font-family: inherit;
-  &::placeholder { color: rgba(255, 255, 255, 0.3); }
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
 }
 
 /* ─── Buttons ─── */
@@ -384,7 +426,9 @@ async function oauthLogin(provider) {
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.2s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -394,7 +438,10 @@ async function oauthLogin(provider) {
     transform: translateY(-1px);
     box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
   }
-  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 /* ─── Status banners ─── */
@@ -424,7 +471,8 @@ async function oauthLogin(provider) {
   align-items: center;
   margin: 20px 0 16px;
   gap: 12px;
-  &::before, &::after {
+  &::before,
+  &::after {
     content: '';
     flex: 1;
     height: 1px;
@@ -456,7 +504,9 @@ async function oauthLogin(provider) {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
   &:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.2);
@@ -464,10 +514,20 @@ async function oauthLogin(provider) {
 }
 
 /* ─── Transitions ─── */
-.slide-fade-enter-active { transition: all 0.3s ease; }
-.slide-fade-leave-active { transition: all 0.2s ease; }
-.slide-fade-enter-from { opacity: 0; transform: translateY(-8px); }
-.slide-fade-leave-to { opacity: 0; transform: translateY(-8px); }
+.slide-fade-enter-active {
+  transition: all 0.3s ease;
+}
+.slide-fade-leave-active {
+  transition: all 0.2s ease;
+}
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
 
 /* ─── Creator Badge ─── */
 .creator-badge {
@@ -477,20 +537,39 @@ async function oauthLogin(provider) {
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.4);
-  font-size: 12px;
+  font-size: 13px;
   z-index: 2;
   letter-spacing: 0.5px;
-  transition: color 0.3s;
+  transition: all 0.3s;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 
   strong {
-    color: rgba(255, 255, 255, 0.7);
-    font-weight: 500;
-    margin-left: 4px;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    margin-left: 5px;
+    background: linear-gradient(90deg, #fff, #a78bfa, #fff);
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: shine 3s linear infinite;
   }
 
   &:hover {
-    color: rgba(255, 255, 255, 0.8);
-    strong { color: #fff; }
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(124, 58, 237, 0.3);
+    box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes shine {
+  to {
+    background-position: 200% center;
   }
 }
 </style>
