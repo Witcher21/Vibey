@@ -4,9 +4,20 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const useChatStore = defineStore('chat', {
   state: () => {
-    // Load from local storage and clean up any stuck streaming states
-    const saved = JSON.parse(localStorage.getItem('vibey_chat')) || [];
-    saved.forEach((msg) => { msg.isStreaming = false; });
+    let saved = [];
+    try {
+      const raw = localStorage.getItem('vibey_chat');
+      if (raw) saved = JSON.parse(raw);
+      if (!Array.isArray(saved)) saved = [];
+    } catch (e) {
+      console.error('[ChatStore] LocalStorage parse fail:', e);
+      saved = [];
+    }
+
+    // Clean up any stuck streaming states from page reloads
+    saved.forEach((msg) => {
+      if (msg) msg.isStreaming = false;
+    });
 
     return {
       messages: saved,
@@ -20,24 +31,24 @@ export const useChatStore = defineStore('chat', {
     messageCount: (state) => state.messages.length,
   },
 
-  /* Helper to persist to localStorage */
-  _saveChat() {
-    localStorage.setItem('vibey_chat', JSON.stringify(this.messages));
-  },
-
-  /* Helper to sanitize ugly API error dumps */
-  _cleanError(msg) {
-    if (!msg) return 'An unknown error occurred.';
-    let clean = typeof msg === 'string' ? msg : JSON.stringify(msg);
-    // Strip giant Google JSON arrays if they are present
-    const idx = clean.indexOf('[{');
-    if (idx > -1) {
-      clean = clean.substring(0, idx).trim();
-    }
-    return clean;
-  },
-
   actions: {
+    /* Helper to persist to localStorage */
+    _saveChat() {
+      localStorage.setItem('vibey_chat', JSON.stringify(this.messages));
+    },
+
+    /* Helper to sanitize ugly API error dumps */
+    _cleanError(msg) {
+      if (!msg) return 'An unknown error occurred.';
+      let clean = typeof msg === 'string' ? msg : JSON.stringify(msg);
+      // Strip giant Google JSON arrays if they are present
+      const idx = clean.indexOf('[{');
+      if (idx > -1) {
+        clean = clean.substring(0, idx).trim();
+      }
+      return clean;
+    },
+
     /* ─── Send a message and stream the response ─── */
     async sendMessage(text, file = null) {
       this.error = null;
@@ -72,9 +83,9 @@ export const useChatStore = defineStore('chat', {
         form.append('message', text);
         if (file) form.append('file', file);
 
-        // Pass the last 10 messages (excluding the new one just added to the end) to preserve context for guests
+        // Pass the last 10 messages to preserve context for guests
         const localHistory = this.messages
-          .filter(m => m.id !== userMsg.id && m.id !== assistantMsg.id && m.content)
+          .filter(m => m && m.id !== userMsg.id && m.id !== assistantMsg.id && m.content)
           .slice(-10)
           .map(m => ({ role: m.role, content: m.content }));
         form.append('history', JSON.stringify(localHistory));
