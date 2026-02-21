@@ -38,6 +38,11 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+/* ─── Root Route ──────────────────────────────────── */
+app.get('/', (_req, res) => {
+  res.send('🚀 Vibey AI Backend is running successfully! (This is just the API. The UI is hosted on Vercel.)');
+});
+
 /* ─── 404 fallback ────────────────────────────────── */
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found.' });
