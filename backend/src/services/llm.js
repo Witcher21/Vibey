@@ -67,21 +67,75 @@ export const toolDefinitions = [
    Low-level streaming SSE fetch wrapper
    Converts an OpenAI-compatible SSE stream → async iterator of chunks
    ──────────────────────────────────────────── */
-async function* fetchStreamChunks(baseUrl, apiKey, body) {
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ ...body, stream: true }),
-  });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`${response.status} ${response.statusText}: ${errText}`);
+
+/* ────────────────────────────────────────────
+   Public API: createChatStream
+   Uses DeepSeek as primary; falls back to Groq on error
+   enableTools=false skips tool injection (second pass)
+   ──────────────────────────────────────────── */
+export async function createChatStream(messages, enableTools = true) {
+  const body = {
+    model: DEEPSEEK_MODEL,
+    messages,
+    temperature: 0.7,
+    ...(enableTools ? { tools: toolDefinitions, tool_choice: 'auto' } : {}),
+  };
+
+  // 1. Try DeepSeek (Native Fetch)
+  if (DEEPSEEK_API_KEY) {
+    try {
+      const response = await fetch(`${DEEPSEEK_BASE}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...body, stream: true }),
+      });
+
+      if (response.ok) {
+        return streamResponse(response);
+      }
+
+      const errText = await response.text();
+      console.warn('[LLM] DeepSeek response error:', response.status, errText);
+    } catch (err) {
+      console.warn('[LLM] DeepSeek connection error:', err.message);
+    }
   }
 
+  // 2. Fallback to Groq
+  if (GROQ_API_KEY) {
+    try {
+      const response = await fetch(`${GROQ_BASE}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...body, model: GROQ_MODEL, stream: true }),
+      });
+
+      if (response.ok) {
+        return streamResponse(response);
+      }
+
+      const errText = await response.text();
+      throw new Error(`Groq error: ${errText}`);
+    } catch (err) {
+      console.error('[LLM] Critical: All LLM providers failed.', err.message);
+      throw err;
+    }
+  }
+
+  throw new Error('No LLM API keys configured.');
+}
+
+/**
+ * Shared helper to parse OpenAI-style SSE stream
+ */
+async function* streamResponse(response) {
   const decoder = new TextDecoder();
   let buffer = '';
 
@@ -98,38 +152,9 @@ async function* fetchStreamChunks(baseUrl, apiKey, body) {
       try {
         const parsed = JSON.parse(data);
         yield parsed;
-      } catch { /* skip malformed lines */ }
+      } catch { /* skip */ }
     }
   }
-}
-
-/* ────────────────────────────────────────────
-   Public API: createChatStream
-   Uses DeepSeek as primary; falls back to Groq on error
-   enableTools=false skips tool injection (second pass)
-   ──────────────────────────────────────────── */
-export async function createChatStream(messages, enableTools = true) {
-  const body = {
-    model: DEEPSEEK_MODEL,
-    messages,
-    temperature: 0.7,
-    ...(enableTools ? { tools: toolDefinitions, tool_choice: 'auto' } : {}),
-  };
-
-  // Try DeepSeek first
-  if (DEEPSEEK_API_KEY) {
-    try {
-      return fetchStreamChunks(DEEPSEEK_BASE, DEEPSEEK_API_KEY, body);
-    } catch (err) {
-      console.warn('[LLM] DeepSeek failed, falling back to Groq:', err.message);
-    }
-  }
-
-  // Fallback to Groq
-  return fetchStreamChunks(GROQ_BASE, GROQ_API_KEY, {
-    ...body,
-    model: GROQ_MODEL,
-  });
 }
 
 /* Second-pass call — no tools so model doesn't force another tool call */
