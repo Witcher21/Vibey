@@ -9,6 +9,7 @@ const GROQ_BASE = 'https://api.groq.com/openai/v1';
 
 const DEEPSEEK_MODEL = 'deepseek-chat';   // DeepSeek-V3 — powerful, cheap
 const GROQ_MODEL = 'llama-3.3-70b-versatile'; // fallback
+const LLM_TIMEOUT_MS = 60_000; // 60 second timeout per provider
 
 /* ────────────────────────────────────────────
    Tool definitions (OpenAI-compatible format)
@@ -84,6 +85,8 @@ export async function createChatStream(messages, enableTools = true) {
 
   // 1. Try DeepSeek (Native Fetch)
   if (DEEPSEEK_API_KEY) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
     try {
       const response = await fetch(`${DEEPSEEK_BASE}/chat/completions`, {
         method: 'POST',
@@ -92,21 +95,26 @@ export async function createChatStream(messages, enableTools = true) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ ...body, stream: true }),
+        signal: controller.signal,
       });
 
       if (response.ok) {
-        return streamResponse(response);
+        return streamResponse(response, timer);
       }
 
+      clearTimeout(timer);
       const errText = await response.text();
       console.warn('[LLM] DeepSeek response error:', response.status, errText);
     } catch (err) {
-      console.warn('[LLM] DeepSeek connection error:', err.message);
+      clearTimeout(timer);
+      console.warn('[LLM] DeepSeek failed:', err.name === 'AbortError' ? 'Timeout (60s)' : err.message);
     }
   }
 
   // 2. Fallback to Groq
   if (GROQ_API_KEY) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
     try {
       const response = await fetch(`${GROQ_BASE}/chat/completions`, {
         method: 'POST',
@@ -115,16 +123,19 @@ export async function createChatStream(messages, enableTools = true) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ ...body, model: GROQ_MODEL, stream: true }),
+        signal: controller.signal,
       });
 
       if (response.ok) {
-        return streamResponse(response);
+        return streamResponse(response, timer);
       }
 
+      clearTimeout(timer);
       const errText = await response.text();
       throw new Error(`Groq error: ${errText}`);
     } catch (err) {
-      console.error('[LLM] Critical: All LLM providers failed.', err.message);
+      clearTimeout(timer);
+      console.error('[LLM] All providers failed:', err.name === 'AbortError' ? 'Timeout' : err.message);
       throw err;
     }
   }
@@ -134,26 +145,32 @@ export async function createChatStream(messages, enableTools = true) {
 
 /**
  * Shared helper to parse OpenAI-style SSE stream
+ * @param {Response} response
+ * @param {NodeJS.Timeout} timer - timeout timer to clear when stream ends
  */
-async function* streamResponse(response) {
+async function* streamResponse(response, timer) {
   const decoder = new TextDecoder();
   let buffer = '';
 
-  for await (const rawChunk of response.body) {
-    buffer += decoder.decode(rawChunk, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
+  try {
+    for await (const rawChunk of response.body) {
+      buffer += decoder.decode(rawChunk, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
 
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || !trimmed.startsWith('data: ')) continue;
-      const data = trimmed.slice(6);
-      if (data === '[DONE]') return;
-      try {
-        const parsed = JSON.parse(data);
-        yield parsed;
-      } catch { /* skip */ }
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data: ')) continue;
+        const data = trimmed.slice(6);
+        if (data === '[DONE]') return;
+        try {
+          const parsed = JSON.parse(data);
+          yield parsed;
+        } catch { /* skip */ }
+      }
     }
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 

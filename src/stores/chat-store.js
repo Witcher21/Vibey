@@ -190,11 +190,16 @@ export const useChatStore = defineStore('chat', {
           /* No auth — guest mode */
         }
 
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90_000); // 90s timeout
+
         const response = await fetch(`${API_BASE}/api/chat`, {
           method: 'POST',
           headers,
           body: form,
+          signal: controller.signal,
         });
+        clearTimeout(timeout);
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
@@ -251,7 +256,10 @@ export const useChatStore = defineStore('chat', {
           }
         }
       } catch (err) {
-        const cleanErr = this._cleanError(err.message);
+        const isTimeout = err.name === 'AbortError';
+        const cleanErr = isTimeout
+          ? 'Response timed out. The AI server may be busy — please try again.'
+          : this._cleanError(err.message);
         this.error = cleanErr;
         const msg = session.messages.find((m) => m.id === assistantMsg.id);
         if (msg) {
