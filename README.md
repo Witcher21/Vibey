@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a https://gns-vibey-ai-chatvercelapp.vercel.app/"><b>🚀 Launch Live Application</b></a>
+  [**🚀 Launch Live Application**](https://gns-vibey-ai-chatvercelapp.vercel.app/)
 </p>
 
 ---
