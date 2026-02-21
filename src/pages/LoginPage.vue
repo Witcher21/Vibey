@@ -124,6 +124,12 @@
         </button>
       </div>
     </div>
+
+    <!-- Creator Badge -->
+    <div class="creator-badge">
+      <q-icon name="code" size="14px" class="q-mr-xs" />
+      Created by <strong>G. Nawod Sanjana</strong>
+    </div>
   </div>
 </template>
 
@@ -462,4 +468,29 @@ async function oauthLogin(provider) {
 .slide-fade-leave-active { transition: all 0.2s ease; }
 .slide-fade-enter-from { opacity: 0; transform: translateY(-8px); }
 .slide-fade-leave-to { opacity: 0; transform: translateY(-8px); }
+
+/* ─── Creator Badge ─── */
+.creator-badge {
+  position: absolute;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  z-index: 2;
+  letter-spacing: 0.5px;
+  transition: color 0.3s;
+
+  strong {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    margin-left: 4px;
+  }
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.8);
+    strong { color: #fff; }
+  }
+}
 </style>
