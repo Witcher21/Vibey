@@ -64,10 +64,15 @@ export async function runAgent({ userId, userMessage, res, file, localHistory })
   try {
     /* ── 2. Build message context ── */
     let history = [];
-    if (userId === 'guest' && localHistory && Array.isArray(localHistory)) {
-      history = localHistory;
-    } else {
-      history = await getChatHistory(userId, 20);
+    try {
+      if (userId === 'guest' && localHistory && Array.isArray(localHistory)) {
+        history = localHistory;
+      } else {
+        history = await getChatHistory(userId, 20);
+      }
+    } catch (dbErr) {
+      console.error('[Agent] History fetch failed, continuing with empty history:', dbErr.message);
+      history = localHistory || [];
     }
 
     const messages = [
@@ -90,7 +95,11 @@ export async function runAgent({ userId, userMessage, res, file, localHistory })
     messages.push({ role: 'user', content: fullUserMessage });
 
     /* ── 4. Save user message to history ── */
-    await saveChatMessage(userId, 'user', userMessage);
+    try {
+      await saveChatMessage(userId, 'user', userMessage);
+    } catch (dbErr) {
+      console.warn('[Agent] Could not save user message to DB:', dbErr.message);
+    }
 
     /* ── 5. First LLM call (may invoke tools) ── */
     sendEvent('status', { message: 'Thinking…' });
@@ -184,7 +193,11 @@ export async function runAgent({ userId, userMessage, res, file, localHistory })
 
     /* ── 8. Save assistant response to history ── */
     if (assistantContent) {
-      await saveChatMessage(userId, 'assistant', assistantContent);
+      try {
+        await saveChatMessage(userId, 'assistant', assistantContent);
+      } catch (dbErr) {
+        console.warn('[Agent] Could not save assistant response to DB:', dbErr.message);
+      }
     }
 
     sendEvent('done', { message: 'complete' });
