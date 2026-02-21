@@ -1,26 +1,53 @@
 import { defineStore } from 'pinia';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const STORAGE_KEY = 'vibey_sessions';
+
+function generateId() {
+  return `chat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function createSession() {
+  return {
+    id: generateId(),
+    title: 'New Chat',
+    messages: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function loadSessions() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Clean up stuck streaming states
+        parsed.forEach((s) => {
+          if (s && Array.isArray(s.messages)) {
+            s.messages.forEach((m) => {
+              if (m) m.isStreaming = false;
+            });
+          }
+        });
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('[ChatStore] LocalStorage parse fail:', e);
+  }
+  return [createSession()];
+}
 
 export const useChatStore = defineStore('chat', {
   state: () => {
-    let saved = [];
-    try {
-      const raw = localStorage.getItem('vibey_chat');
-      if (raw) saved = JSON.parse(raw);
-      if (!Array.isArray(saved)) saved = [];
-    } catch (e) {
-      console.error('[ChatStore] LocalStorage parse fail:', e);
-      saved = [];
-    }
-
-    // Clean up any stuck streaming states from page reloads
-    saved.forEach((msg) => {
-      if (msg) msg.isStreaming = false;
-    });
+    const sessions = loadSessions();
+    const activeId = sessions[0]?.id || '';
 
     return {
-      messages: saved,
+      sessions,
+      activeSessionId: activeId,
       isStreaming: false,
       statusMessage: '',
       error: null,
@@ -28,30 +55,86 @@ export const useChatStore = defineStore('chat', {
   },
 
   getters: {
-    messageCount: (state) => state.messages.length,
+    /** Current active session object */
+    activeSession: (state) =>
+      state.sessions.find((s) => s.id === state.activeSessionId) || state.sessions[0],
+
+    /** Messages of the active session */
+    messages() {
+      return this.activeSession?.messages || [];
+    },
+
+    /** Message count of active session */
+    messageCount() {
+      return this.messages.length;
+    },
+
+    /** All sessions sorted by most recent first */
+    sortedSessions: (state) =>
+      [...state.sessions].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)),
   },
 
   actions: {
-    /* Helper to persist to localStorage */
-    _saveChat() {
-      localStorage.setItem('vibey_chat', JSON.stringify(this.messages));
+    /* ═══ Internal helpers ═══ */
+    _persist() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.sessions));
     },
 
-    /* Helper to sanitize ugly API error dumps */
     _cleanError(msg) {
       if (!msg) return 'An unknown error occurred.';
       let clean = typeof msg === 'string' ? msg : JSON.stringify(msg);
-      // Strip giant Google JSON arrays if they are present
       const idx = clean.indexOf('[{');
-      if (idx > -1) {
-        clean = clean.substring(0, idx).trim();
-      }
+      if (idx > -1) clean = clean.substring(0, idx).trim();
       return clean;
     },
 
-    /* ─── Send a message and stream the response ─── */
+    _autoTitle(text) {
+      if (!text) return 'New Chat';
+      const cleaned = text.replace(/\s+/g, ' ').trim();
+      return cleaned.length > 38 ? cleaned.slice(0, 38) + '…' : cleaned;
+    },
+
+    /* ═══ Session Management ═══ */
+
+    /** Create a new chat session and switch to it */
+    newChat() {
+      const session = createSession();
+      this.sessions.unshift(session);
+      this.activeSessionId = session.id;
+      this._persist();
+    },
+
+    /** Switch to an existing session */
+    switchSession(sessionId) {
+      if (this.sessions.find((s) => s.id === sessionId)) {
+        this.activeSessionId = sessionId;
+      }
+    },
+
+    /** Delete a session */
+    deleteSession(sessionId) {
+      this.sessions = this.sessions.filter((s) => s.id !== sessionId);
+      // If we deleted the active session, switch to first or create new
+      if (this.activeSessionId === sessionId) {
+        if (this.sessions.length === 0) {
+          this.newChat();
+        } else {
+          this.activeSessionId = this.sessions[0].id;
+        }
+      }
+      this._persist();
+    },
+
+    /** Clear current chat (keeps the session, just empties messages) */
+    clearChat() {
+      this.newChat();
+    },
+
+    /* ═══ Send message & stream response ═══ */
     async sendMessage(text, file = null) {
       this.error = null;
+      const session = this.activeSession;
+      if (!session) return;
 
       /* Optimistic UI — add user message immediately */
       const userMsg = {
@@ -61,7 +144,13 @@ export const useChatStore = defineStore('chat', {
         timestamp: new Date().toISOString(),
         file: file ? { name: file.name, size: file.size } : null,
       };
-      this.messages.push(userMsg);
+      session.messages.push(userMsg);
+
+      /* Auto-title from first user message */
+      if (session.messages.filter((m) => m.role === 'user').length === 1) {
+        session.title = this._autoTitle(text);
+      }
+      session.updatedAt = new Date().toISOString();
 
       /* Placeholder for assistant response */
       const assistantMsg = {
@@ -69,29 +158,26 @@ export const useChatStore = defineStore('chat', {
         role: 'assistant',
         content: '',
         timestamp: new Date().toISOString(),
-        musicResults: null,
         isStreaming: true,
       };
-      this.messages.push(assistantMsg);
-      this._saveChat();
+      session.messages.push(assistantMsg);
+      this._persist();
       this.isStreaming = true;
       this.statusMessage = '';
 
       try {
-        /* Build multipart form */
         const form = new FormData();
         form.append('message', text);
         if (file) form.append('file', file);
 
-        // Pass the last 10 messages to preserve context for guests
-        const localHistory = this.messages
-          .filter(m => m && m.id !== userMsg.id && m.id !== assistantMsg.id && m.content)
+        // Pass last 10 messages as context
+        const localHistory = session.messages
+          .filter((m) => m && m.id !== userMsg.id && m.id !== assistantMsg.id && m.content)
           .slice(-10)
-          .map(m => ({ role: m.role, content: m.content }));
+          .map((m) => ({ role: m.role, content: m.content }));
         form.append('history', JSON.stringify(localHistory));
 
         const headers = {};
-        /* If user has a Supabase session, attach the token */
         try {
           const { supabase } = await import('src/boot/supabase');
           if (supabase) {
@@ -115,7 +201,7 @@ export const useChatStore = defineStore('chat', {
           throw new Error(errData.error || `Server responded with ${response.status}`);
         }
 
-        /* ─── Parse SSE stream ─── */
+        /* Parse SSE stream */
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -139,13 +225,15 @@ export const useChatStore = defineStore('chat', {
               const raw = line.slice(6);
               try {
                 const payload = JSON.parse(raw);
-                this._handleSSEEventWithType(currentEvent, payload, assistantMsg.id);
-              } catch { /* non-JSON line, skip */ }
+                this._handleSSE(currentEvent, payload, assistantMsg.id, session.id);
+              } catch {
+                /* non-JSON line, skip */
+              }
             }
           }
         }
 
-        /* Process any remaining buffer */
+        /* Process remaining buffer */
         if (buffer.trim()) {
           const remaining = buffer.split('\n');
           let currentEvent = null;
@@ -155,32 +243,38 @@ export const useChatStore = defineStore('chat', {
             } else if (line.startsWith('data: ')) {
               try {
                 const payload = JSON.parse(line.slice(6));
-                this._handleSSEEventWithType(currentEvent, payload, assistantMsg.id);
-              } catch { /* non-JSON line, skip */ }
+                this._handleSSE(currentEvent, payload, assistantMsg.id, session.id);
+              } catch {
+                /* skip */
+              }
             }
           }
         }
       } catch (err) {
         const cleanErr = this._cleanError(err.message);
         this.error = cleanErr;
-        if (assistantMsg.content.length === 0) {
-           assistantMsg.content = `⚠️ **System Info:** ${cleanErr}`;
-        } else {
-           assistantMsg.content += `\n\n⚠️ **System Info:** ${cleanErr}`;
+        const msg = session.messages.find((m) => m.id === assistantMsg.id);
+        if (msg) {
+          if (msg.content.length === 0) {
+            msg.content = `⚠️ **Error:** ${cleanErr}`;
+          } else {
+            msg.content += `\n\n⚠️ **Error:** ${cleanErr}`;
+          }
         }
       } finally {
-        const reactiveMsg = this.messages.find((m) => m.id === assistantMsg.id);
-        if (reactiveMsg) {
-          reactiveMsg.isStreaming = false;
-        }
-        this._saveChat();
+        const msg = session.messages.find((m) => m.id === assistantMsg.id);
+        if (msg) msg.isStreaming = false;
+        session.updatedAt = new Date().toISOString();
+        this._persist();
         this.isStreaming = false;
         this.statusMessage = '';
       }
     },
 
-    _handleSSEEventWithType(type, payload, msgId) {
-      const msg = this.messages.find((m) => m.id === msgId);
+    _handleSSE(type, payload, msgId, sessionId) {
+      const session = this.sessions.find((s) => s.id === sessionId);
+      if (!session) return;
+      const msg = session.messages.find((m) => m.id === msgId);
       if (!msg) return;
 
       switch (type) {
@@ -190,21 +284,19 @@ export const useChatStore = defineStore('chat', {
         case 'status':
           this.statusMessage = payload.message || '';
           break;
-        case 'error':
-          {
-            const cleanErr = this._cleanError(payload.message);
-            this.error = cleanErr;
-            if (msg.content.length === 0) {
-              msg.content = `⚠️ **System Info:** ${cleanErr}`;
-            } else {
-              msg.content += `\n\n⚠️ **System Info:** ${cleanErr}`;
-            }
+        case 'error': {
+          const cleanErr = this._cleanError(payload.message);
+          this.error = cleanErr;
+          if (msg.content.length === 0) {
+            msg.content = `⚠️ **Error:** ${cleanErr}`;
+          } else {
+            msg.content += `\n\n⚠️ **Error:** ${cleanErr}`;
           }
           break;
+        }
         case 'done':
           break;
         default:
-          /* Fallback: handle events without explicit type */
           if (payload.content !== undefined) {
             msg.content += payload.content;
           }
@@ -215,12 +307,6 @@ export const useChatStore = defineStore('chat', {
           }
           break;
       }
-    },
-
-    /* ─── Clear chat (local only) ─── */
-    clearChat() {
-      this.messages = [];
-      this._saveChat();
     },
   },
 });

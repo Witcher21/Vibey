@@ -18,10 +18,41 @@
       </div>
 
       <div class="sidebar-actions" v-if="!sidebarCollapsed">
-        <button class="new-chat-btn" @click="chatStore.clearChat()">
+        <button class="new-chat-btn" @click="chatStore.newChat()">
           <q-icon name="add" size="18px" />
           <span>New Chat</span>
         </button>
+      </div>
+
+      <!-- Chat History List -->
+      <div class="sidebar-history" v-if="!sidebarCollapsed">
+        <div class="history-label">
+          <q-icon name="history" size="14px" />
+          <span>Chat History</span>
+        </div>
+        <div class="history-list">
+          <div
+            v-for="session in chatStore.sortedSessions"
+            :key="session.id"
+            class="history-item"
+            :class="{ active: session.id === chatStore.activeSessionId }"
+            @click="chatStore.switchSession(session.id)"
+          >
+            <q-icon name="chat_bubble_outline" size="14px" class="history-item-icon" />
+            <span class="history-item-title">{{ session.title }}</span>
+            <q-btn
+              flat round dense
+              icon="close"
+              size="8px"
+              class="history-item-delete"
+              @click.stop="chatStore.deleteSession(session.id)"
+            />
+          </div>
+          <div v-if="chatStore.sessions.length === 0" class="history-empty">
+            <q-icon name="forum" size="20px" />
+            <span>No chats yet</span>
+          </div>
+        </div>
       </div>
 
       <!-- Pro Plan CTA -->
@@ -383,6 +414,106 @@ function sendQuickAction(prompt) {
     color: #fff;
     transform: translateY(-1px);
   }
+}
+
+/* ═══ Chat History ═══ */
+.sidebar-history {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 8px 12px 0;
+  overflow: hidden;
+}
+
+.history-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 4px 8px;
+}
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.25);
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.45);
+  }
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 2px;
+  position: relative;
+  border: 1px solid transparent;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    .history-item-delete { opacity: 1; }
+  }
+
+  &.active {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.25);
+    .history-item-icon { color: #a78bfa; }
+    .history-item-title { color: rgba(255, 255, 255, 0.95); }
+  }
+}
+
+.history-item-icon {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.25);
+  transition: color 0.2s;
+}
+
+.history-item-title {
+  flex: 1;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.history-item-delete {
+  flex-shrink: 0;
+  opacity: 0;
+  color: rgba(255, 255, 255, 0.3) !important;
+  transition: opacity 0.2s, color 0.2s;
+  &:hover {
+    color: #f87171 !important;
+  }
+}
+
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 0;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 12px;
 }
 
 .sidebar-pro {
